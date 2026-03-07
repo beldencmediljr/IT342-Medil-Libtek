@@ -53,7 +53,7 @@ function App() {
       alert("Cannot connect to backend! Is Spring Boot running?");
     }
   };
-
+  // kuan ragud para ma commit
   // --- UI COMPONENTS ---
   const Branding = () => (
     <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
