@@ -7,7 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class LibtekApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(LibtekApplication.class, args);
+		SpringApplication.run(LibtekApplication.class, args);  
+		      
 	}
 
 }

@@ -6,9 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -20,33 +18,24 @@ public class AuthController {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> payload) {
-        if (userRepository.existsByEmail(payload.get("email"))) {
-            return ResponseEntity.badRequest().body("Email already exists");
-        }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+        String email = credentials.get("email");
+        String password = credentials.get("password");
 
-        User user = new User();
-        user.setFullName(payload.get("fullName"));
-        user.setEmail(payload.get("email"));
-        // Hash the password!
-        user.setPasswordHash(passwordEncoder.encode(payload.get("password"))); 
-        
-        userRepository.save(user);
-        return ResponseEntity.ok("Registration successful");
+        User user = userRepository.findByEmail(email);
+
+        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+            return ResponseEntity.ok("Login Successful");
+        } else {
+            return ResponseEntity.status(401).body("Invalid Credentials");
+        }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> payload) {
-        Optional<User> userOpt = userRepository.findByEmail(payload.get("email"));
-        
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            // Compare raw password with hashed password
-            if (passwordEncoder.matches(payload.get("password"), user.getPasswordHash())) {
-                return ResponseEntity.ok("Login Successful! Simulated JWT Token 12345");
-            }
-        }
-        return ResponseEntity.status(401).body("Invalid credentials");
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+        return ResponseEntity.ok("Registration Successful");
     }
 }

@@ -18,18 +18,23 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable()) // Disable CSRF so React POST requests work
+        http
+            .csrf(csrf -> csrf.disable()) 
             .cors(cors -> cors.configurationSource(request -> {
                 var config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("http://localhost:3001")); // Your React Port
+                config.setAllowedOriginPatterns(List.of("*")); 
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 config.setAllowedHeaders(List.of("*"));
+                config.setAllowCredentials(true);
                 return config;
             }))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll() // Open login and register
+                .requestMatchers("/api/v1/auth/**").permitAll() 
                 .anyRequest().authenticated()
-            );
+            )
+            .httpBasic(basic -> basic.disable())
+            .formLogin(form -> form.disable());
+            
         return http.build();
     }
 }
