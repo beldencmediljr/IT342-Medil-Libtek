@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="libtek_red">#8B0000</color>
+    <color name="libtek_red_dark">#5C0000</color>
+    <color name="libtek_yellow">#FFD700</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="input_background">#E8EAF6</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="gray_light">#F5F5F5</color>
+    <color name="gray_medium">#9E9E9E</color>
+    <color name="error_red">#D32F2F</color>
+</resources>
