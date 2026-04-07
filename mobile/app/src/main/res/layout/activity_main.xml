@@ -10,5 +10,13 @@
         android:layout_height="wrap_content"
         android:text="Welcome to Libtek!"
         android:textSize="24sp"
-        android:textStyle="bold"/>
+        android:textStyle="bold"
+        android:layout_marginBottom="20dp"/>
+
+    <Button
+        android:id="@+id/btnBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Logout / Go Back" />
+
 </LinearLayout>
