@@ -1,13 +1,13 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./public/index.html"
   ],
   theme: {
     extend: {
       colors: {
-        'libtek-maroon': '#800000', // CIT Branding from your SDD 
+        'libtek-maroon': '#800000', 
         'libtek-gold': '#FFD700',
       },
     },
