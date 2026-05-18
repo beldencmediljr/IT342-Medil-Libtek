@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AdminDashboard } from './pages/AdminDashboard';
-import { AdminResources } from './pages/AdminResources';
-import { AdminReservations } from './pages/AdminReservations';
-import { AdminVerification } from './pages/AdminVerification';
-import { AdminFines } from './pages/AdminFines';
-import { AdminLogin } from './pages/AdminLogin';
+
+// --- UPDATED VERTICAL SLICE IMPORTS ---
+import { AdminLogin } from './features/auth/AdminLogin';
+import { AdminDashboard } from './features/admin/AdminDashboard';
+import { AdminResources } from './features/resources/AdminResources';
+import { AdminReservations } from './features/reservations/AdminReservations';
+import { AdminVerification } from './features/verification/AdminVerification';
+import { AdminFines } from './features/fines/AdminFines';
+// --------------------------------------
 
 export default function App() {
   return (
