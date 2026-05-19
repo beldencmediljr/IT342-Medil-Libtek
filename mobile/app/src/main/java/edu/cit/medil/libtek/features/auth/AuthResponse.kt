@@ -1,29 +1,26 @@
-package edu.cit.medil.libtek.data.model
+package edu.cit.medil.libtek.features.auth
 
-data class AuthResponse(
-    val success: Boolean,
-    val data: AuthData?,
-    val error: ErrorData?,
-    val timestamp: String
+data class User(
+    val id: Long?,
+    val full_name: String?,
+    val email: String?,
+    val role: String?,
+    val is_verified: Boolean? = false
 )
 
 data class AuthData(
-    val user: UserData?,
     val accessToken: String?,
-    val refreshToken: String?
+    val refreshToken: String?,
+    val user: User?
 )
 
-data class UserData(
-    val id: Long?,              // Changed to Long to match backend
-    val email: String,
-    val full_name: String,      // Backend uses snake_case in JSON
-    val role: String,
-    val id_image_url: String?,
-    val is_verified: Boolean?
+data class ApiError(
+    val message: String?
 )
 
-data class ErrorData(
-    val code: String,
-    val message: String,
-    val details: Any?
+data class AuthResponse(
+    val success: Boolean,
+    val message: String?,
+    val data: AuthData?,
+    val error: ApiError?
 )

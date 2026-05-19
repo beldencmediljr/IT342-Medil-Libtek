@@ -1,225 +1,215 @@
-package edu.cit.medil.libtek
+package edu.cit.medil.libtek.features.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.util.Patterns
-import android.widget.EditText
-import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
-import com.google.android.material.button.MaterialButton
-import edu.cit.medil.libtek.api.ApiClient
-import edu.cit.medil.libtek.data.model.AuthResponse
-import edu.cit.medil.libtek.util.TokenManager
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+import edu.cit.medil.libtek.features.api.ApiClient
+import edu.cit.medil.libtek.features.core.MainActivity
+import edu.cit.medil.libtek.util.TokenManager
+
 class LoginActivity : AppCompatActivity() {
-
-    private lateinit var etLoginEmail: EditText
-    private lateinit var etLoginPassword: EditText
-    private lateinit var btnLogin: MaterialButton
-    private lateinit var btnGoogleSignIn: MaterialButton
-    private lateinit var tvGoToRegister: TextView
-    private lateinit var tvForgotPassword: TextView
-
     private lateinit var tokenManager: TokenManager
-    private lateinit var googleSignInClient: GoogleSignInClient
-
-    companion object {
-        private const val TAG = "LoginActivity"
-        private const val RC_GOOGLE_SIGN_IN = 9001
-        private const val MIN_PASSWORD_LENGTH = 6
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         tokenManager = TokenManager(this)
 
         if (tokenManager.isLoggedIn() && tokenManager.isStudent()) {
-            navigateToMain()
+            startActivity(Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+            finish()
             return
         }
 
-        setContentView(R.layout.activity_login)
-        initializeViews()
-        setupGoogleSignIn()
-        setupListeners()
-    }
-
-    private fun initializeViews() {
-        etLoginEmail = findViewById(R.id.etLoginEmail)
-        etLoginPassword = findViewById(R.id.etLoginPassword)
-        btnLogin = findViewById(R.id.btnLogin)
-        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn)
-        tvGoToRegister = findViewById(R.id.tvGoToRegister)
-        tvForgotPassword = findViewById(R.id.tvForgotPassword)
-    }
-
-    private fun setupGoogleSignIn() {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id))
-            .requestEmail()
-            .build()
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
-    }
-
-    private fun setupListeners() {
-        btnLogin.setOnClickListener {
-            if (validateInputs()) {
-                performLogin()
-            }
-        }
-
-        btnGoogleSignIn.setOnClickListener {
-            performGoogleSignIn()
-        }
-
-        tvGoToRegister.setOnClickListener {
-            startActivity(Intent(this, RegisterActivity::class.java))
-        }
-
-        tvForgotPassword.setOnClickListener {
-            Toast.makeText(this, "Please contact library staff", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun validateInputs(): Boolean {
-        val email = etLoginEmail.text.toString().trim()
-        val password = etLoginPassword.text.toString().trim()
-
-        if (email.isEmpty()) {
-            etLoginEmail.error = "Email is required"
-            return false
-        }
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etLoginEmail.error = "Please enter a valid email format"
-            return false
-        }
-
-        if (password.isEmpty()) {
-            etLoginPassword.error = "Password is required"
-            return false
-        }
-        if (password.length < MIN_PASSWORD_LENGTH) {
-            etLoginPassword.error = "Password must be at least $MIN_PASSWORD_LENGTH characters"
-            return false
-        }
-
-        return true
-    }
-
-    private fun performLogin() {
-        val email = etLoginEmail.text.toString().trim()
-        val password = etLoginPassword.text.toString().trim()
-
-        Log.d(TAG, "Logging in: email=$email")
-
-        val credentials = mapOf("email" to email, "password" to password)
-
-        ApiClient.apiService.login(credentials).enqueue(object : Callback<AuthResponse> {
-            override fun onResponse(call: Call<AuthResponse>, response: Response<AuthResponse>) {
-                Log.d(TAG, "Response code: ${response.code()}")
-                Log.d(TAG, "Response body: ${response.body()}")
-
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val authData = response.body()?.data
-
-                    authData?.let {
-                        when (it.user?.role) {
-                            "USER", "STUDENT" -> {
-                                tokenManager.saveAuthData(it)
-                                Toast.makeText(this@LoginActivity,
-                                    "Welcome, ${it.user?.full_name}!",
-                                    Toast.LENGTH_SHORT).show()
-                                navigateToMain()
-                            }
-                            "ADMIN" -> {
-                                showAdminRedirectDialog()
-                            }
-                            else -> {
-                                Toast.makeText(this@LoginActivity,
-                                    "Unknown role: ${it.user?.role}",
-                                    Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
-                } else {
-                    val errorMsg = response.body()?.error?.message
-                        ?: "Login Failed (Code: ${response.code()})"
-                    Toast.makeText(this@LoginActivity, errorMsg, Toast.LENGTH_SHORT).show()
+        setContent {
+            LoginScreen(
+                onLoginSuccess = {
+                    startActivity(Intent(this, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    })
+                    finish()
+                },
+                onRegisterClick = {
+                    startActivity(Intent(this, RegisterActivity::class.java))
                 }
-            }
-
-            override fun onFailure(call: Call<AuthResponse>, t: Throwable) {
-                Log.e(TAG, "Network error: ${t.message}", t)
-                Toast.makeText(this@LoginActivity,
-                    "Network Error: ${t.message}",
-                    Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
-    private fun performGoogleSignIn() {
-        val signInIntent = googleSignInClient.signInIntent
-        startActivityForResult(signInIntent, RC_GOOGLE_SIGN_IN)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == RC_GOOGLE_SIGN_IN) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                val idToken = account?.idToken
-                idToken?.let { sendGoogleTokenToBackend(it) }
-            } catch (e: ApiException) {
-                Toast.makeText(this, "Google Sign-In failed", Toast.LENGTH_SHORT).show()
-            }
+            )
         }
     }
+}
 
-    private fun sendGoogleTokenToBackend(idToken: String) {
-        val googleAuth = mapOf("idToken" to idToken)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginScreen(onLoginSuccess: () -> Unit, onRegisterClick: () -> Unit) {
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
 
-        ApiClient.apiService.googleLogin(googleAuth).enqueue(object : Callback<AuthResponse> {
-            override fun onResponse(call: Call<AuthResponse>, response: Response<AuthResponse>) {
-                if (response.isSuccessful && response.body()?.success == true) {
-                    response.body()?.data?.let {
-                        tokenManager.saveAuthData(it)
-                        navigateToMain()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // ── Logo section ──────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.35f)
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF7F1D1D)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "LIB\nTEK",
+                    color = Color(0xFFCA8A04),
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 30.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        } // ← closes the logo Box
+
+        // ── Red form section ──────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.65f)
+                .background(Color(0xFF7F1D1D), RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .padding(horizontal = 24.dp, vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "LOGIN",
+                color = Color.White,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                placeholder = { Text("Email", color = Color.Gray) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RoundedCornerShape(8.dp)),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = { Text("Password", color = Color.Gray) },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RoundedCornerShape(8.dp)),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent
+                )
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    if (email.isNotEmpty() && password.isNotEmpty()) {
+                        isLoading = true
+                        ApiClient.apiService.login(
+                            mapOf("email" to email, "password" to password)
+                        ).enqueue(object : Callback<AuthResponse> {
+                            override fun onResponse(
+                                call: Call<AuthResponse>,
+                                response: Response<AuthResponse>
+                            ) {
+                                isLoading = false
+                                if (response.isSuccessful && response.body()?.success == true) {
+                                    response.body()?.data?.let {
+                                        tokenManager.saveAuthData(it)
+                                        onLoginSuccess()
+                                    }
+                                } else {
+                                    val msg = response.body()?.error?.message ?: "Login Failed"
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            override fun onFailure(call: Call<AuthResponse>, t: Throwable) {
+                                isLoading = false
+                                Toast.makeText(
+                                    context,
+                                    "Network Error: ${t.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        })
+                    } else {
+                        Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                     }
-                } else {
-                    Toast.makeText(this@LoginActivity, "Google Auth Failed", Toast.LENGTH_SHORT).show()
-                }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                shape = RoundedCornerShape(25.dp),
+                enabled = !isLoading
+            ) {
+                Text(
+                    if (isLoading) "Loading..." else "Login",
+                    color = Color(0xFF7F1D1D),
+                    fontWeight = FontWeight.Bold
+                )
             }
 
-            override fun onFailure(call: Call<AuthResponse>, t: Throwable) {
-                Toast.makeText(this@LoginActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            Spacer(modifier = Modifier.weight(1f))
+
+            Row(modifier = Modifier.padding(bottom = 16.dp)) {
+                Text("Don't have an account? ", color = Color.White, fontSize = 14.sp)
+                Text(
+                    "Register",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.clickable { onRegisterClick() }
+                )
             }
-        })
-    }
+        } // ← closes the form Column
 
-    private fun showAdminRedirectDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Admin Access Detected")
-            .setMessage("Administrators must use the LibTek Web Portal.")
-            .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-            .setCancelable(false)
-            .show()
-    }
-
-    private fun navigateToMain() {
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()
-    }
+    } // ← closes the outer Column
 }

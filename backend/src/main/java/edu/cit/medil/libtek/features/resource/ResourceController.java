@@ -1,18 +1,10 @@
 package edu.cit.medil.libtek.features.resource;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/resources")
@@ -23,17 +15,30 @@ public class ResourceController {
     private ResourceRepository resourceRepository;
 
     @GetMapping
-    public List<Resource> getResources(@RequestParam String type) {
-        return resourceRepository.findByType(type);
+    public ResponseEntity<List<Resource>> getAllResources() {
+        List<Resource> resources = resourceRepository.findAll();
+        return ResponseEntity.ok(resources);
     }
 
     @PostMapping
-    public Resource createResource(@RequestBody Resource resource) {
-        return resourceRepository.save(resource);
+    public ResponseEntity<Resource> createResource(@RequestBody Resource resource) {
+        Resource savedResource = resourceRepository.save(resource);
+        return ResponseEntity.ok(savedResource);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<Resource> getResourceById(@PathVariable Long id) {
+        return resourceRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public void deleteResource(@PathVariable Long id) {
-        resourceRepository.deleteById(id);
+    public ResponseEntity<Void> deleteResource(@PathVariable Long id) {
+        if (resourceRepository.existsById(id)) {
+            resourceRepository.deleteById(id);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }
