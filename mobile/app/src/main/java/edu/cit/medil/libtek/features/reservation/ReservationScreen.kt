@@ -20,27 +20,41 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import edu.cit.medil.libtek.features.api.ApiClient
+import edu.cit.medil.libtek.features.api.ReservationDto
+import edu.cit.medil.libtek.util.TokenManager
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReservationScreen() {
+fun ReservationScreen(tokenManager: TokenManager, onNavigateToCatalog: () -> Unit) {
     var activeTab by remember { mutableStateOf("upcoming") }
+    var reservations by remember { mutableStateOf<List<ReservationDto>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // Dummy data translating your React state
-    val upcomingReservations = listOf(
-        ReservationData(1, "Study Booth 5", "Today, April 23", "3:00 PM - 5:00 PM", "Floor 2, East Wing", "confirmed"),
-        ReservationData(2, "Introduction to Algorithms", "Tomorrow, April 24", "Due: May 1, 2026", "Computer Science", "confirmed")
-    )
+    fun fetchReservations() {
+        isLoading = true
+        val token = "Bearer ${tokenManager.getAccessToken()}"
+        ApiClient.apiService.getUserReservations(token).enqueue(object : Callback<List<ReservationDto>> {
+            override fun onResponse(call: Call<List<ReservationDto>>, response: Response<List<ReservationDto>>) {
+                if (response.isSuccessful) reservations = response.body() ?: emptyList()
+                isLoading = false
+            }
+            override fun onFailure(call: Call<List<ReservationDto>>, t: Throwable) { isLoading = false }
+        })
+    }
 
-    val pastReservations = listOf(
-        ReservationData(3, "Study Booth 3", "Monday, April 21", "1:00 PM - 3:00 PM", "", "completed"),
-        ReservationData(4, "Database Systems", "Monday, April 14", "Overdue (PHP 50 fine)", "", "overdue")
-    )
+    LaunchedEffect(Unit) { fetchReservations() }
+
+    val upcomingList = reservations.filter { it.status.equals("ACTIVE", ignoreCase = true) || it.status.equals("PENDING", ignoreCase = true) }
+    val pastList = reservations.filter { !it.status.equals("ACTIVE", ignoreCase = true) && !it.status.equals("PENDING", ignoreCase = true) }
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* TODO: Open booking flow */ },
+                onClick = onNavigateToCatalog, // Properly wired to jump to Catalog
                 containerColor = Color(0xFF7F1D1D),
                 contentColor = Color.White,
                 shape = CircleShape
@@ -49,63 +63,29 @@ fun ReservationScreen() {
             }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF9FAFB))
-                .padding(innerPadding)
-        ) {
-            // Header
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "My Reservations",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
-                )
-
-                // Tabs
+        Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF9FAFB)).padding(innerPadding)) {
+            Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(16.dp)) {
+                Text("My Reservations", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(bottom = 16.dp, top = 8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TabButton(
-                        text = "Upcoming (${upcomingReservations.size})",
-                        isActive = activeTab == "upcoming",
-                        modifier = Modifier.weight(1f)
-                    ) { activeTab = "upcoming" }
-
-                    TabButton(
-                        text = "Past (${pastReservations.size})",
-                        isActive = activeTab == "past",
-                        modifier = Modifier.weight(1f)
-                    ) { activeTab = "past" }
+                    TabButton("Upcoming (${upcomingList.size})", activeTab == "upcoming", Modifier.weight(1f)) { activeTab = "upcoming" }
+                    TabButton("Past (${pastList.size})", activeTab == "past", Modifier.weight(1f)) { activeTab = "past" }
                 }
             }
 
-            // List
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                val listToDisplay = if (activeTab == "upcoming") upcomingReservations else pastReservations
-
-                if (listToDisplay.isEmpty()) {
-                    item {
-                        Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-                            Text("No reservations found.", color = Color.Gray)
-                        }
-                    }
-                } else {
-                    items(listToDisplay) { res ->
-                        if (activeTab == "upcoming") {
-                            UpcomingCard(res)
-                        } else {
-                            PastCard(res)
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF7F1D1D)) }
+            } else {
+                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
+                    val listToDisplay = if (activeTab == "upcoming") upcomingList else pastList
+                    if (listToDisplay.isEmpty()) {
+                        item { Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No reservations found.", color = Color.Gray) } }
+                    } else {
+                        items(listToDisplay) { res ->
+                            if (activeTab == "upcoming") {
+                                UpcomingCard(res = res, tokenManager = tokenManager, onStatusChanged = { fetchReservations() })
+                            } else {
+                                PastCard(res)
+                            }
                         }
                     }
                 }
@@ -117,57 +97,51 @@ fun ReservationScreen() {
 @Composable
 fun TabButton(text: String, isActive: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Button(
-        onClick = onClick,
-        modifier = modifier.height(40.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isActive) Color(0xFF7F1D1D) else Color(0xFFF3F4F6),
-            contentColor = if (isActive) Color.White else Color.Gray
-        ),
+        onClick = onClick, modifier = modifier.height(40.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = if (isActive) Color(0xFF7F1D1D) else Color(0xFFF3F4F6), contentColor = if (isActive) Color.White else Color.Gray),
         shape = RoundedCornerShape(8.dp)
-    ) {
-        Text(text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    }
+    ) { Text(text, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
 }
 
 @Composable
-fun UpcomingCard(res: ReservationData) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3F4F6))
-    ) {
+fun UpcomingCard(res: ReservationDto, tokenManager: TokenManager, onStatusChanged: () -> Unit) {
+    var isCanceling by remember { mutableStateOf(false) }
+
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3F4F6))) {
         Column {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth().background(Color(0xFF7F1D1D)).padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(res.name, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF7F1D1D)).padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(res.resourceName ?: "Resource", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                 Icon(Icons.Default.Close, contentDescription = "Cancel", tint = Color.White, modifier = Modifier.size(18.dp))
             }
-            // Details
             Column(modifier = Modifier.padding(16.dp)) {
-                DetailRow(Icons.Default.DateRange, "Date", res.date)
+                DetailRow(Icons.Default.DateRange, "Date", res.reservationDate ?: "Unknown Date")
                 Spacer(modifier = Modifier.height(8.dp))
-                DetailRow(Icons.Default.LocationOn, "Location", res.location)
+                DetailRow(Icons.Default.LocationOn, "Type", res.resourceType ?: "Unknown Type")
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { /* Modify */ },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF7F1D1D)),
-                        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF7F1D1D)),
-                        shape = RoundedCornerShape(8.dp)
-                    ) { Text("Modify", fontWeight = FontWeight.Bold) }
 
-                    Button(
-                        onClick = { /* Cancel */ },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
-                        shape = RoundedCornerShape(8.dp)
-                    ) { Text("Cancel", fontWeight = FontWeight.Bold) }
+                if (isCanceling) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = Color(0xFFDC2626))
+                } else {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                isCanceling = true
+                                val payload = mapOf("status" to "CANCELLED")
+                                val token = "Bearer ${tokenManager.getAccessToken()}"
+                                ApiClient.apiService.updateReservationStatus(token, res.id, payload).enqueue(object : Callback<ReservationDto> {
+                                    override fun onResponse(call: Call<ReservationDto>, response: Response<ReservationDto>) {
+                                        isCanceling = false
+                                        if (response.isSuccessful) onStatusChanged()
+                                    }
+                                    override fun onFailure(call: Call<ReservationDto>, t: Throwable) { isCanceling = false }
+                                })
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) { Text("Cancel Booking", fontWeight = FontWeight.Bold) }
+                    }
                 }
             }
         }
@@ -175,44 +149,19 @@ fun UpcomingCard(res: ReservationData) {
 }
 
 @Composable
-fun PastCard(res: ReservationData) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3F4F6))
-    ) {
+fun PastCard(res: ReservationDto) {
+    val statusColor = if (res.status.equals("COMPLETED", ignoreCase = true)) Color.Gray else Color(0xFFDC2626)
+    val bgColor = if (res.status.equals("COMPLETED", ignoreCase = true)) Color(0xFFF3F4F6) else Color(0xFFFEF2F2)
+
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3F4F6))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text(res.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(res.date, fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 2.dp))
+                    Text(res.resourceName ?: "Resource", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(res.reservationDate ?: "Unknown Date", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 2.dp))
                 }
-                Box(
-                    modifier = Modifier
-                        .background(
-                            if (res.status == "completed") Color(0xFFF3F4F6) else Color(0xFFFEF2F2),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = res.status.uppercase(),
-                        color = if (res.status == "completed") Color.Gray else Color(0xFFDC2626),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(res.time, fontSize = 12.sp, color = Color.DarkGray)
-
-            if (res.status == "overdue") {
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier.fillMaxWidth().background(Color(0xFFFEF2F2), RoundedCornerShape(8.dp))
-                        .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(8.dp)).padding(8.dp)
-                ) {
-                    Text("Please settle your fine at the Accounting Office", fontSize = 12.sp, color = Color(0xFFB91C1C))
+                Box(modifier = Modifier.background(bgColor, RoundedCornerShape(12.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                    Text(text = res.status?.uppercase() ?: "UNKNOWN", color = statusColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -230,5 +179,3 @@ fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Stri
         }
     }
 }
-
-data class ReservationData(val id: Int, val name: String, val date: String, val time: String, val location: String, val status: String)

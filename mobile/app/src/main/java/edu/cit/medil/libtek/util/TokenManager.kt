@@ -17,6 +17,7 @@ class TokenManager(context: Context) {
         private const val KEY_USER_NAME = "user_name"
         private const val KEY_USER_ROLE = "user_role"
         private const val KEY_IS_VERIFIED = "is_verified"
+        private const val KEY_ID_IMAGE_URL = "id_image_url"
     }
 
     fun saveAuthData(authData: AuthData) {
@@ -29,21 +30,27 @@ class TokenManager(context: Context) {
                 putString(KEY_USER_NAME, user.full_name)
                 putString(KEY_USER_ROLE, user.role)
                 putBoolean(KEY_IS_VERIFIED, user.is_verified ?: false)
+                putString(KEY_ID_IMAGE_URL, user.id_image_url ?: "")
             }
             apply()
         }
     }
 
-    // THE FIX: Reconstructs and returns the AuthData object for your UI screens
+    // THE FIX: Added the missing function to update the user's name locally after editing their profile
+    fun updateStoredName(newName: String) {
+        prefs.edit().putString(KEY_USER_NAME, newName).apply()
+    }
+
     fun getAuthData(): AuthData? {
         val token = getAccessToken()
         if (token == null) return null
 
         val user = User(
             id = getUserId(),
-            full_name = getUserName(),
             email = getUserEmail(),
+            full_name = getUserName(),
             role = getUserRole(),
+            id_image_url = getIdImageUrl(),
             is_verified = isVerified()
         )
         return AuthData(
@@ -62,6 +69,7 @@ class TokenManager(context: Context) {
     fun getUserName(): String? = prefs.getString(KEY_USER_NAME, null)
     fun getUserRole(): String? = prefs.getString(KEY_USER_ROLE, null)
     fun isVerified(): Boolean = prefs.getBoolean(KEY_IS_VERIFIED, false)
+    fun getIdImageUrl(): String? = prefs.getString(KEY_ID_IMAGE_URL, null)
 
     fun clearAuthData() {
         prefs.edit().clear().apply()
