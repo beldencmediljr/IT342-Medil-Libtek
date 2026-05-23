@@ -5,10 +5,9 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleLogin = async (e) => {
+    const handleLogin = async (e: any) => {
         e.preventDefault();
         try {
-            // This matches your SSD API Contract [cite: 284]
             const response = await axios.post('http://localhost:8080/api/v1/auth/login', {
                 email,
                 password
@@ -21,9 +20,12 @@ const Login = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#800000]">
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-96">
+            <div className="bg-white p-8 rounded-2xl shadow-xl w-96 text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#7F1D1D] border-4 border-[#CA8A04] mb-4 text-white font-bold text-sm leading-none">
+                    LIB<br/>TEK
+                </div>
                 <h2 className="text-2xl font-bold text-center text-[#800000] mb-6">LibTek Admin</h2>
-                <form onSubmit={handleLogin}>
+                <form onSubmit={handleLogin} className="text-left">
                     <div className="mb-4">
                         <label className="block text-sm font-bold mb-2">Email Address</label>
                         <input 

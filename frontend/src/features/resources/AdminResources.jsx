@@ -21,8 +21,8 @@ export function AdminResources() {
 
   const fetchResources = useCallback(async () => {
     try {
-      const type = activeTab === 'books' ? 'BOOK' : 'BOOTH';
-      const response = await api.get(`/resources?type=${type}`);
+      const typeParam = activeTab === 'books' ? 'BOOK' : 'BOOTH';
+      const response = await api.get(`/resources?type=${typeParam}`);
       setResources(response.data);
     } catch (error) {
       console.error(error);
@@ -33,9 +33,8 @@ export function AdminResources() {
     fetchResources();
   }, [fetchResources]);
 
-  // FIX: Added explicit validation and error handling
-  const handleAddSubmit = async (e) => {
-    e.preventDefault(); // Prevent accidental form submissions
+  const handleAddSubmit = async (e: any) => {
+    e.preventDefault(); 
 
     if (!formData.name.trim()) {
       alert("Please enter a name or title for the resource.");
@@ -46,20 +45,15 @@ export function AdminResources() {
       await api.post('/resources', formData);
       alert("Resource successfully added!");
       setShowAddModal(false);
-      setFormData(initialFormState); // Reset form
-      
-      // If we added a booth while on the booth tab, refresh the list
-      if ((formData.type === 'BOOK' && activeTab === 'books') || 
-          (formData.type === 'BOOTH' && activeTab === 'booths')) {
-        fetchResources();
-      }
+      setFormData(initialFormState); 
+      fetchResources();
     } catch (error) {
       console.error("Failed to add resource:", error);
       alert("Failed to save resource to the database. Please check connection.");
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this resource?")) return;
     
     try {
@@ -152,10 +146,10 @@ export function AdminResources() {
                 <tbody className="divide-y divide-gray-200">
                   {resources.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="text-center py-8 text-gray-500">No resources found. Add one to get started.</td>
+                      <td colSpan={5} className="text-center py-8 text-gray-500">No resources found. Add one to get started.</td>
                     </tr>
                   )}
-                  {resources.map((item) => (
+                  {resources.map((item: any) => (
                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-4 font-medium text-gray-900">{item.name}</td>
                       {activeTab === 'books' ? (

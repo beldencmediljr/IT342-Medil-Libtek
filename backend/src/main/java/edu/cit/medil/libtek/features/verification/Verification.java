@@ -1,5 +1,6 @@
 package edu.cit.medil.libtek.features.verification;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,7 +18,10 @@ public class Verification {
     private String studentId;
     private String email;
     private String status; // "pending", "approved", "rejected"
+    
+    @Column(name = "id_image_url", columnDefinition = "LONGTEXT")
     private String idImageUrl;
+    
     private String rejectionReason;
 
     // Getters and Setters

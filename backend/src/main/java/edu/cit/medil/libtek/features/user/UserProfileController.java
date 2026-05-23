@@ -3,6 +3,7 @@ package edu.cit.medil.libtek.features.user;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.cit.medil.libtek.features.reservation.Reservation;
 import edu.cit.medil.libtek.features.reservation.ReservationRepository;
+import edu.cit.medil.libtek.features.verification.Verification;
+import edu.cit.medil.libtek.features.verification.VerificationRepository;
 
 @RestController
 @RequestMapping("/api/v1/user/profile")
@@ -30,6 +33,9 @@ public class UserProfileController {
     private ReservationRepository reservationRepository;
 
     @Autowired
+    private VerificationRepository verificationRepository;
+
+    @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
     @GetMapping
@@ -41,7 +47,21 @@ public class UserProfileController {
         List<Reservation> allUserReservations = reservationRepository.findByStudentName(user.getFullName());
         List<Reservation> activeReservations = reservationRepository.findByStudentNameAndStatus(user.getFullName(), "ACTIVE");
 
-        String verificationStatus = (user.getIsVerified() != null && user.getIsVerified()) ? "Verified" : "Pending";
+        Optional<Verification> verificationOpt = verificationRepository.findTopByEmailOrderByIdDesc(user.getEmail());
+        String verificationStatus = "Not Verified";
+        
+        if (user.getIsVerified() != null && user.getIsVerified()) {
+            verificationStatus = "Verified";
+        } else if (verificationOpt.isPresent()) {
+            String vStatus = verificationOpt.get().getStatus();
+            if ("pending".equalsIgnoreCase(vStatus)) {
+                verificationStatus = "Pending Review";
+            } else if ("rejected".equalsIgnoreCase(vStatus)) {
+                verificationStatus = "Rejected";
+            } else if ("approved".equalsIgnoreCase(vStatus)) {
+                verificationStatus = "Verified";
+            }
+        }
 
         Map<String, Object> data = new HashMap<>();
         data.put("activeBookings", activeReservations.size());
@@ -77,7 +97,6 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
-    // NEW: Real functional Change Password Endpoint
     @PutMapping("/change-password")
     public ResponseEntity<Map<String, Object>> changePassword(Authentication authentication, @RequestBody Map<String, String> payload) {
         String email = authentication.getName();

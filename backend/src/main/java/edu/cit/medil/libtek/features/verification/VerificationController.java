@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.cit.medil.libtek.features.user.UserRepository;
 
 @RestController
 @RequestMapping("/api/verifications")
@@ -22,6 +23,9 @@ public class VerificationController {
     @Autowired
     private VerificationRepository verificationRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @GetMapping
     public List<Verification> getAllVerifications() {
         return verificationRepository.findAll();
@@ -30,14 +34,33 @@ public class VerificationController {
     @PostMapping
     public Verification submitVerification(@RequestBody Verification verification) {
         verification.setStatus("pending");
-        return verificationRepository.save(verification);
+        Verification saved = verificationRepository.save(verification);
+        userRepository.findByEmail(verification.getEmail()).ifPresent(user -> {
+            user.setIdImageUrl(verification.getIdImageUrl());
+            userRepository.save(user);
+        });
+        return saved;
     }
 
     @PutMapping("/{id}/status")
     public Verification updateStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         Verification verification = verificationRepository.findById(id).orElseThrow();
-        verification.setStatus(payload.get("status"));
+        String status = payload.get("status");
+        verification.setStatus(status);
         verification.setRejectionReason(payload.get("rejectionReason"));
-        return verificationRepository.save(verification);
+        Verification saved = verificationRepository.save(verification);
+        
+        if ("approved".equalsIgnoreCase(status)) {
+            userRepository.findByEmail(verification.getEmail()).ifPresent(user -> {
+                user.setIsVerified(true);
+                userRepository.save(user);
+            });
+        } else if ("rejected".equalsIgnoreCase(status)) {
+            userRepository.findByEmail(verification.getEmail()).ifPresent(user -> {
+                user.setIsVerified(false);
+                userRepository.save(user);
+            });
+        }
+        return saved;
     }
 }

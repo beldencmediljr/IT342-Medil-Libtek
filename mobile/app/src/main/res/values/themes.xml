@@ -3,9 +3,9 @@
     <style name="Theme.Libtek" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     </style>
 
-    <!-- Splash screen starting theme — must also be AppCompat-based -->
+    <!-- Splash screen starting theme — updated background to application maroon theme -->
     <style name="Theme.App.Starting" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:windowSplashScreenBackground">@color/white</item>
+        <item name="android:windowSplashScreenBackground">@color/libtek_red</item>
     </style>
 
 </resources>

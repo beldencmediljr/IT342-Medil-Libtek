@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -64,7 +63,6 @@ fun ProfileScreen(
 
     LaunchedEffect(Unit) { loadProfile() }
 
-    // Real Image Selection Launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             isUploading = true
@@ -120,9 +118,16 @@ fun ProfileScreen(
             }
         }
 
-        val status = profileData?.verificationStatus ?: "Pending"
+        val status = profileData?.verificationStatus ?: "Not Verified"
         val isVerified = status.equals("Verified", ignoreCase = true)
-        val verificationColor = if (isVerified) Color(0xFF10B981) else Color(0xFFF59E0B)
+        val isPendingReview = status.equals("Pending Review", ignoreCase = true)
+
+        val verificationColor = when {
+            isVerified -> Color(0xFF10B981)
+            isPendingReview -> Color(0xFFF59E0B)
+            status.equals("Rejected", ignoreCase = true) -> Color(0xFFDC2626)
+            else -> Color.Gray
+        }
 
         Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = verificationColor.copy(alpha = 0.1f)), border = androidx.compose.foundation.BorderStroke(1.dp, verificationColor.copy(alpha = 0.3f))) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -131,7 +136,7 @@ fun ProfileScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Verification Status: $status", fontWeight = FontWeight.Bold, color = verificationColor)
                 }
-                if (!isVerified) {
+                if (!isVerified && !isPendingReview) {
                     if (isUploading) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color(0xFF7F1D1D))
                     } else {

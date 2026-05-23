@@ -12,7 +12,7 @@ data class DashboardData(
     val activeBooks: Int,
     val boothsToday: Int,
     val hoursThisWeek: Int,
-    val upcomingReservation: UpcomingReservation?,
+    val upcomingReservation: List<UpcomingReservation>?,
     val recentActivity: List<ActivityLog>
 )
 

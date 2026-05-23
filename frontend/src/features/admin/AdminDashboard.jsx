@@ -7,8 +7,8 @@ import api from '../../api';
 export function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [scanStudentId, setScanStudentId] = useState(''); // NEW: State for scanner simulator
-  const [isScanning, setIsScanning] = useState(false);    // NEW: Loading state for scanner
+  const [scanStudentId, setScanStudentId] = useState(''); 
+  const [isScanning, setIsScanning] = useState(false);    
 
   const [dashboardData, setDashboardData] = useState({
     activeReservations: 0,
@@ -37,7 +37,6 @@ export function AdminDashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // NEW: Handler for the Scanner Simulator
   const handleScan = async (e) => {
     e.preventDefault();
     if (!scanStudentId.trim()) return;
@@ -45,8 +44,8 @@ export function AdminDashboard() {
     setIsScanning(true);
     try {
       await api.post('/scanner/scan', { studentId: scanStudentId });
-      setScanStudentId(''); // Clear the input after success
-      fetchDashboardData(); // Refresh the dashboard to see the occupancy change instantly
+      setScanStudentId(''); 
+      fetchDashboardData(); 
     } catch (error) {
       console.error('Scan failed:', error);
       alert('Failed to process scan. Check backend connection.');
@@ -59,19 +58,31 @@ export function AdminDashboard() {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7F1D1D]"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-transparent border-t-[#7F1D1D]"></div>
         </div>
       </AdminLayout>
     );
   }
 
   const occupancyPercentage = dashboardData.maxCapacity > 0 
-    ? ((dashboardData.currentOccupancy / dashboardData.maxCapacity) * 100).toFixed(0) 
+    ? Math.round((dashboardData.currentOccupancy / dashboardData.maxCapacity) * 100)
     : 0;
 
   return (
     <AdminLayout>
       <div className="space-y-6">
+        <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-16 h-16 rounded-full bg-[#7F1D1D] flex items-center justify-center text-white font-bold border-4 border-[#CA8A04] text-xs leading-none text-center select-none">
+              LIB<br/>TEK
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Library Control Panel</h2>
+              <p className="text-sm text-gray-500">Official Operational Workspace</p>
+            </div>
+          </div>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -135,8 +146,7 @@ export function AdminDashboard() {
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            
-            {/* NEW: Scanner Simulator */}
+            {/* Scanner Simulator */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <div className="flex items-center gap-2 mb-4">
                 <ScanLine className="w-5 h-5 text-[#7F1D1D]" />

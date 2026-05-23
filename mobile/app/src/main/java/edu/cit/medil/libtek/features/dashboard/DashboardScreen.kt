@@ -105,17 +105,24 @@ fun DashboardScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Upcoming Today", fontWeight = FontWeight.Bold, color = Color(0xFF003366), modifier = Modifier.padding(horizontal = 16.dp))
-        dashboardData?.upcomingReservation?.let { res ->
-            Card(modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF7F1D1D))) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(res.location, color = Color.White, fontWeight = FontWeight.Bold)
-                        Box(modifier = Modifier.background(Color(0xFF10B981), RoundedCornerShape(12.dp)).padding(horizontal = 8.dp, vertical = 2.dp)) { Text(res.status, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+        val upcomingList = dashboardData?.upcomingReservation
+        if (upcomingList.isNullOrEmpty()) {
+            Text("No upcoming bookings.", color = Color.Gray, modifier = Modifier.padding(16.dp))
+        } else {
+            upcomingList.forEach { res ->
+                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF7F1D1D))) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(res.location, color = Color.White, fontWeight = FontWeight.Bold)
+                            Box(modifier = Modifier.background(Color(0xFF10B981), RoundedCornerShape(12.dp)).padding(horizontal = 8.dp, vertical = 2.dp)) { Text(res.status, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                        }
+                        Text("${res.date}  |  ${res.time}", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
                     }
-                    Text("${res.date}  |  ${res.time}", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
                 }
             }
-        } ?: Text("No upcoming bookings.", color = Color.Gray, modifier = Modifier.padding(16.dp))
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text("Quick Actions", fontWeight = FontWeight.Bold, color = Color(0xFF003366), modifier = Modifier.padding(horizontal = 16.dp))
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -124,17 +131,18 @@ fun DashboardScreen(
         }
 
         Text("Recent Activity", fontWeight = FontWeight.Bold, color = Color(0xFF003366), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp))
-        dashboardData?.recentActivity?.let { logs ->
-            if (logs.isEmpty()) { Text("No recent activities found.", color = Color.Gray, modifier = Modifier.padding(16.dp)) } else {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    logs.forEach { log ->
-                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF7F1D1D))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(log.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                                Text("${log.subtitle} • ${log.timeAgo}", color = Color.Gray, fontSize = 12.sp)
-                            }
+        val logs = dashboardData?.recentActivity
+        if (logs.isNullOrEmpty()) {
+            Text("No recent activities found.", color = Color.Gray, modifier = Modifier.padding(16.dp))
+        } else {
+            Column(modifier = Modifier.padding(16.dp)) {
+                logs.forEach { log ->
+                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF7F1D1D))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(log.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("${log.subtitle} • ${log.timeAgo}", color = Color.Gray, fontSize = 12.sp)
                         }
                     }
                 }
@@ -146,7 +154,11 @@ fun DashboardScreen(
 
 @Composable
 fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+    ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF003366))
             Text(label, fontSize = 10.sp, color = Color.Gray)
