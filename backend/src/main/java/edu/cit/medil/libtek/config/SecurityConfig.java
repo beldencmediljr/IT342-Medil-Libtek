@@ -43,13 +43,16 @@ public class SecurityConfig {
             }))
             .addFilterBefore(userIdAuthFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/resources/**").permitAll()
-                .requestMatchers("/api/scanner/**").permitAll()
-                .requestMatchers("/api/reservations/**").permitAll()
-                .requestMatchers("/api/dashboard/**").permitAll()
-                .requestMatchers("/api/fines/**").permitAll()
-                .requestMatchers("/api/verifications/**").permitAll()
+                // Explicitly map both exact root URLs and nested child wildcards to fix the Spring Security 6 matching bugs
+                .requestMatchers("/api/v1/auth", "/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/resources", "/api/resources/**").permitAll()
+                .requestMatchers("/api/scanner", "/api/scanner/**").permitAll()
+                .requestMatchers("/api/reservations", "/api/reservations/**").permitAll()
+                .requestMatchers("/api/dashboard", "/api/dashboard/**").permitAll()
+                .requestMatchers("/api/fines", "/api/fines/**").permitAll()
+                .requestMatchers("/api/verifications", "/api/verifications/**").permitAll()
+                // Secure user profile operational interfaces
+                .requestMatchers("/api/v1/user/dashboard", "/api/v1/user/profile", "/api/v1/user/profile/**").authenticated()
                 .anyRequest().authenticated()
             )
             .httpBasic(basic -> basic.disable())

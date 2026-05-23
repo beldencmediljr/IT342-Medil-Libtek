@@ -1,10 +1,10 @@
 import { AdminLayout } from '../admin/AdminLayout';
-import { Calendar, BookOpen, MapPin, User } from 'lucide-react';
+import { Calendar, BookOpen, MapPin, User, Check, X, CheckCircle } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
 
 export function AdminReservations() {
-  const [activeTab, setActiveTab] = useState('active');
+  const [activeTab, setActiveTab] = useState('pending');
   const [reservations, setReservations] = useState([]);
 
   const fetchReservations = useCallback(async () => {
@@ -34,7 +34,7 @@ export function AdminReservations() {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Reservation Management</h2>
-          <p className="text-gray-600 mt-1">View and manage all reservations</p>
+          <p className="text-gray-600 mt-1">Review, approve, and track student workspace usage states</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -42,20 +42,20 @@ export function AdminReservations() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex gap-2">
                 <button
+                  onClick={() => setActiveTab('pending')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    activeTab === 'pending' ? 'bg-[#7F1D1D] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Pending Action
+                </button>
+                <button
                   onClick={() => setActiveTab('active')}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     activeTab === 'active' ? 'bg-[#7F1D1D] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  Active
-                </button>
-                <button
-                  onClick={() => setActiveTab('upcoming')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === 'upcoming' ? 'bg-[#7F1D1D] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Upcoming
+                  Approved / Active
                 </button>
                 <button
                   onClick={() => setActiveTab('completed')}
@@ -65,12 +65,21 @@ export function AdminReservations() {
                 >
                   Completed
                 </button>
+                <button
+                  onClick={() => setActiveTab('rejected')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    activeTab === 'rejected' ? 'bg-[#7F1D1D] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Rejected
+                </button>
               </div>
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
+              <img src="" alt="" />
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Student</th>
@@ -106,22 +115,41 @@ export function AdminReservations() {
                     <td className="px-6 py-4 text-gray-600 text-sm">{reservation.reservationDate}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        reservation.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
                         reservation.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                        reservation.status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
+                        reservation.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
                         {reservation.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {reservation.status === 'ACTIVE' && (
-                        <button 
-                          onClick={() => handleUpdateStatus(reservation.id, 'COMPLETED')}
-                          className="text-[#7F1D1D] hover:underline text-sm font-medium"
-                        >
-                          Mark Complete
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {reservation.status === 'PENDING' && (
+                          <>
+                            <button 
+                              onClick={() => handleUpdateStatus(reservation.id, 'ACTIVE')}
+                              className="inline-flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-green-700 transition-colors"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Approve
+                            </button>
+                            <button 
+                              onClick={() => handleUpdateStatus(reservation.id, 'REJECTED')}
+                              className="inline-flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-red-700 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" /> Reject
+                            </button>
+                          </>
+                        )}
+                        {reservation.status === 'ACTIVE' && (
+                          <button 
+                            onClick={() => handleUpdateStatus(reservation.id, 'COMPLETED')}
+                            className="inline-flex items-center gap-1 bg-[#7F1D1D] text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-[#601616] transition-colors"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Mark Complete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -132,7 +160,7 @@ export function AdminReservations() {
           {reservations.length === 0 && (
             <div className="text-center py-12">
               <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No reservations found</p>
+              <p className="text-gray-600">No reservations found in this category</p>
             </div>
           )}
         </div>

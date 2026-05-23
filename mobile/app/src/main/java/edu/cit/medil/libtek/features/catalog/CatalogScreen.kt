@@ -152,14 +152,14 @@ fun ResourceCardItem(resource: ResourceDto, tokenManager: TokenManager, onNaviga
                             "resourceName" to (resource.name ?: ""),
                             "resourceType" to (resource.type ?: ""),
                             "reservationDate" to "Today",
-                            "status" to "ACTIVE"
+                            "status" to "PENDING"
                         )
                         ApiClient.apiService.createReservation(token, payload).enqueue(object : Callback<ReservationDto> {
                             override fun onResponse(call: Call<ReservationDto>, response: Response<ReservationDto>) {
                                 isProcessing = false
                                 if (response.isSuccessful) {
-                                    Toast.makeText(context, "Resource Booked Successfully", Toast.LENGTH_SHORT).show()
-                                    onNavigateToBookings() // Navigate immediately to bookings view
+                                    Toast.makeText(context, "Reservation Submitted. Pending Librarian Review.", Toast.LENGTH_LONG).show()
+                                    onNavigateToBookings()
                                 } else {
                                     Toast.makeText(context, "Failed to book resource", Toast.LENGTH_SHORT).show()
                                 }

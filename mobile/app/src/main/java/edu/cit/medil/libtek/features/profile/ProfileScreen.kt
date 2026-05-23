@@ -1,5 +1,8 @@
 package edu.cit.medil.libtek.features.profile
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,9 +33,14 @@ import edu.cit.medil.libtek.features.api.ApiClient
 import edu.cit.medil.libtek.features.api.ProfileData
 import edu.cit.medil.libtek.features.api.ProfileResponse
 import edu.cit.medil.libtek.util.TokenManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.ByteArrayOutputStream
 
 @Composable
 fun ProfileScreen(
@@ -42,6 +50,7 @@ fun ProfileScreen(
     onLogoutClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var profileData by remember { mutableStateOf<ProfileData?>(null) }
     var mutableName by remember { mutableStateOf(tokenManager.getUserName() ?: "") }
     var mutablePhone by remember { mutableStateOf("") }
@@ -66,35 +75,87 @@ fun ProfileScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             isUploading = true
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val bytes = inputStream?.readBytes()
-                val base64Image = android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
+            scope.launch(Dispatchers.IO) {
+                try {
+                    // Step 1: Open stream and decode image bounds safely to prevent OOM errors
+                    val options = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                    }
+                    context.contentResolver.openInputStream(uri).use { stream ->
+                        BitmapFactory.decodeStream(stream, null, options)
+                    }
 
-                val payload = mapOf(
-                    "studentName" to mutableName,
-                    "studentId" to tokenManager.getUserId().toString(),
-                    "email" to (tokenManager.getUserEmail() ?: ""),
-                    "idImageUrl" to base64Image
-                )
-                ApiClient.apiService.uploadIdVerification("Bearer ${tokenManager.getAccessToken()}", payload).enqueue(object : Callback<Map<String, Any>> {
-                    override fun onResponse(call: Call<Map<String, Any>>, response: Response<Map<String, Any>>) {
-                        isUploading = false
-                        if (response.isSuccessful) {
-                            Toast.makeText(context, "ID Uploaded successfully. Pending Review.", Toast.LENGTH_LONG).show()
-                            loadProfile()
-                        } else {
-                            Toast.makeText(context, "Upload failed at server", Toast.LENGTH_SHORT).show()
+                    // Step 2: Calculate scale factor to downsample large modern device cameras (Aim for ~1080p max resolution)
+                    val requiredWidth = 1080
+                    val requiredHeight = 1080
+                    var sampleSize = 1
+                    if (options.outWidth > requiredWidth || options.outHeight > requiredHeight) {
+                        val halfWidth = options.outWidth / 2
+                        val halfHeight = options.outHeight / 2
+                        while ((halfWidth / sampleSize) >= requiredWidth && (halfHeight / sampleSize) >= requiredHeight) {
+                            sampleSize *= 2
                         }
                     }
-                    override fun onFailure(call: Call<Map<String, Any>>, t: Throwable) {
-                        isUploading = false
-                        Toast.makeText(context, "Network Error", Toast.LENGTH_SHORT).show()
+
+                    // Step 3: Decode full bitmap using calculated safe memory footprint configuration options
+                    val scaleOptions = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = false
+                        inSampleSize = sampleSize
                     }
-                })
-            } catch (e: Exception) {
-                isUploading = false
-                Toast.makeText(context, "Failed to process image", Toast.LENGTH_SHORT).show()
+
+                    val scaledBitmap = context.contentResolver.openInputStream(uri).use { stream ->
+                        BitmapFactory.decodeStream(stream, null, scaleOptions)
+                    }
+
+                    if (scaledBitmap != null) {
+                        // Step 4: Compress downscale bitmap output into standard compressed JPEG structure arrays
+                        val outputStream = ByteArrayOutputStream()
+                        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
+                        val compressedBytes = outputStream.toByteArray()
+                        scaledBitmap.recycle() // Explicitly release memory allocations back to system runtime natively
+
+                        // Step 5: Wrap payload utilizing clean inline formatting flags
+                        val base64Image = android.util.Base64.encodeToString(compressedBytes, android.util.Base64.NO_WRAP)
+                        val payload = mapOf(
+                            "studentName" to mutableName,
+                            "studentId" to tokenManager.getUserId().toString(),
+                            "email" to (tokenManager.getUserEmail() ?: ""),
+                            "idImageUrl" to base64Image
+                        )
+
+                        withContext(Dispatchers.Main) {
+                            ApiClient.apiService.uploadIdVerification("Bearer ${tokenManager.getAccessToken()}", payload)
+                                .enqueue(object : Callback<Map<String, Any>> {
+                                    override fun onResponse(call: Call<Map<String, Any>>, response: Response<Map<String, Any>>) {
+                                        isUploading = false
+                                        if (response.isSuccessful) {
+                                            Toast.makeText(context, "ID Uploaded successfully. Pending Review.", Toast.LENGTH_LONG).show()
+                                            loadProfile()
+                                        } else {
+                                            Log.e("LibTekUpload", "Server rejected payload with status code response: ${response.code()}")
+                                            Toast.makeText(context, "Upload failed at server", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                    override fun onFailure(call: Call<Map<String, Any>>, t: Throwable) {
+                                        isUploading = false
+                                        Log.e("LibTekUpload", "Network fail execution path exception caught", t)
+                                        Toast.makeText(context, "Network Error", Toast.LENGTH_SHORT).show()
+                                    }
+                                })
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            isUploading = false
+                            Toast.makeText(context, "Failed to parse picked image file source data structures", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        isUploading = false
+                        Log.e("LibTekUpload", "Fatal task processing failure tracked during lifecycle execution", e)
+                        Toast.makeText(context, "Failed to safely process image source data parameters", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }

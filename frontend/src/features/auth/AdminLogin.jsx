@@ -7,7 +7,7 @@ export function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (email === 'admin@libtek.edu' && password === 'admin123') {
       localStorage.setItem('token', 'dummy-admin-token');
@@ -20,10 +20,13 @@ export function AdminLogin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#7F1D1D] to-[#991B1B] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#7F1D1D] border-8 border-[#CA8A04] mb-4 text-white font-bold text-xl leading-none text-center">
-            LIB<br/>TEK
-          </div>
+        <div className="text-center mb-8 flex flex-col items-center justify-center">
+          <img 
+            src="/logo512.png" 
+            alt="LibTek Official Logo" 
+            className="w-24 h-24 object-contain mb-4 select-none rounded-full"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
           <h1 className="text-white text-3xl font-bold">LibTek Admin Portal</h1>
         </div>
 

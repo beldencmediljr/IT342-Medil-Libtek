@@ -73,9 +73,12 @@ export function AdminDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-full bg-[#7F1D1D] flex items-center justify-center text-white font-bold border-4 border-[#CA8A04] text-xs leading-none text-center select-none">
-              LIB<br/>TEK
-            </div>
+            <img 
+              src="/logo512.png" 
+              alt="LibTek Official Logo" 
+              className="w-16 h-16 object-contain select-none"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
             <div>
               <h2 className="text-xl font-bold text-gray-900">Library Control Panel</h2>
               <p className="text-sm text-gray-500">Official Operational Workspace</p>

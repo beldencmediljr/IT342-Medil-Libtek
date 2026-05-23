@@ -5,7 +5,7 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleLogin = async (e: any) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         try {
             const response = await axios.post('http://localhost:8080/api/v1/auth/login', {
@@ -20,12 +20,15 @@ const Login = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#800000]">
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-96 text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#7F1D1D] border-4 border-[#CA8A04] mb-4 text-white font-bold text-sm leading-none">
-                    LIB<br/>TEK
-                </div>
+            <div className="bg-white p-8 rounded-2xl shadow-xl w-96 text-center flex flex-col items-center justify-center">
+                <img 
+                    src="/logo512.png" 
+                    alt="LibTek Official Logo" 
+                    className="w-20 h-20 object-contain mb-4 select-none rounded-full"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                />
                 <h2 className="text-2xl font-bold text-center text-[#800000] mb-6">LibTek Admin</h2>
-                <form onSubmit={handleLogin} className="text-left">
+                <form onSubmit={handleLogin} className="text-left w-full">
                     <div className="mb-4">
                         <label className="block text-sm font-bold mb-2">Email Address</label>
                         <input 

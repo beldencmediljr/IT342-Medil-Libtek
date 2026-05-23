@@ -34,6 +34,7 @@ import edu.cit.medil.libtek.R
 import edu.cit.medil.libtek.features.api.ApiClient
 import edu.cit.medil.libtek.features.core.MainActivity
 import edu.cit.medil.libtek.util.TokenManager
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var tokenManager: TokenManager
@@ -54,7 +55,10 @@ class LoginActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
+        setTheme(R.style.Theme_Libtek)
+
         tokenManager = TokenManager(this)
 
         if (tokenManager.isLoggedIn() && tokenManager.isStudent()) {
@@ -123,7 +127,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onRegisterClick: () -> Unit, onTrigg
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
 
-        // --- LOGO SECTION ---
         Box(
             modifier = Modifier.fillMaxWidth().weight(0.35f).background(Color.White),
             contentAlignment = Alignment.Center
@@ -136,7 +139,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onRegisterClick: () -> Unit, onTrigg
             )
         }
 
-        // --- LOGIN FORM SECTION ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
