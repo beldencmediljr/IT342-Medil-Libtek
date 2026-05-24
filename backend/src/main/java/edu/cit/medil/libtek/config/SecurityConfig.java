@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -43,15 +44,19 @@ public class SecurityConfig {
             }))
             .addFilterBefore(userIdAuthFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
-                // Explicitly map both exact root URLs and nested child wildcards to fix the Spring Security 6 matching bugs
                 .requestMatchers("/api/v1/auth", "/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/resources", "/api/resources/**").permitAll()
                 .requestMatchers("/api/scanner", "/api/scanner/**").permitAll()
                 .requestMatchers("/api/reservations", "/api/reservations/**").permitAll()
                 .requestMatchers("/api/dashboard", "/api/dashboard/**").permitAll()
                 .requestMatchers("/api/fines", "/api/fines/**").permitAll()
-                .requestMatchers("/api/verifications", "/api/verifications/**").permitAll()
-                // Secure user profile operational interfaces
+                
+                // Open paths explicitly to support both root routing rules and sub-directories
+                .requestMatchers(HttpMethod.OPTIONS, "/api/verifications/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/verifications").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/verifications").permitAll()
+                .requestMatchers("/api/verifications/**").permitAll()
+                
                 .requestMatchers("/api/v1/user/dashboard", "/api/v1/user/profile", "/api/v1/user/profile/**").authenticated()
                 .anyRequest().authenticated()
             )

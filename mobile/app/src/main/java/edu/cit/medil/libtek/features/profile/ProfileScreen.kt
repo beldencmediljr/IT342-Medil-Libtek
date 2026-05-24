@@ -77,7 +77,6 @@ fun ProfileScreen(
             isUploading = true
             scope.launch(Dispatchers.IO) {
                 try {
-                    // Step 1: Open stream and decode image bounds safely to prevent OOM errors
                     val options = BitmapFactory.Options().apply {
                         inJustDecodeBounds = true
                     }
@@ -85,7 +84,6 @@ fun ProfileScreen(
                         BitmapFactory.decodeStream(stream, null, options)
                     }
 
-                    // Step 2: Calculate scale factor to downsample large modern device cameras (Aim for ~1080p max resolution)
                     val requiredWidth = 1080
                     val requiredHeight = 1080
                     var sampleSize = 1
@@ -97,7 +95,6 @@ fun ProfileScreen(
                         }
                     }
 
-                    // Step 3: Decode full bitmap using calculated safe memory footprint configuration options
                     val scaleOptions = BitmapFactory.Options().apply {
                         inJustDecodeBounds = false
                         inSampleSize = sampleSize
@@ -108,13 +105,11 @@ fun ProfileScreen(
                     }
 
                     if (scaledBitmap != null) {
-                        // Step 4: Compress downscale bitmap output into standard compressed JPEG structure arrays
                         val outputStream = ByteArrayOutputStream()
                         scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
                         val compressedBytes = outputStream.toByteArray()
-                        scaledBitmap.recycle() // Explicitly release memory allocations back to system runtime natively
+                        scaledBitmap.recycle()
 
-                        // Step 5: Wrap payload utilizing clean inline formatting flags
                         val base64Image = android.util.Base64.encodeToString(compressedBytes, android.util.Base64.NO_WRAP)
                         val payload = mapOf(
                             "studentName" to mutableName,

@@ -226,7 +226,7 @@ export function AdminDashboard() {
               <p className="text-sm text-gray-600 mt-1">Student ID approvals</p>
             </div>
             <div className="divide-y divide-gray-100 flex-1 overflow-y-auto">
-              {dashboardData.pendingVerifications.length === 0 ? (
+              {!dashboardData.pendingVerifications || dashboardData.pendingVerifications.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">No pending verifications</div>
               ) : (
                 dashboardData.pendingVerifications.map((item) => (
@@ -262,7 +262,7 @@ export function AdminDashboard() {
             <p className="text-sm text-gray-600 mt-1">Latest library bookings</p>
           </div>
           <div className="divide-y divide-gray-100">
-            {dashboardData.recentActivities.length === 0 ? (
+            {!dashboardData.recentActivities || dashboardData.recentActivities.length === 0 ? (
               <div className="p-6 text-center text-gray-500">No recent activity found</div>
             ) : (
               dashboardData.recentActivities.map((activity) => (

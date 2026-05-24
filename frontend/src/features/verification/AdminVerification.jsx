@@ -24,7 +24,7 @@ export function AdminVerification() {
   const handleStatusUpdate = async (id, status) => {
     try {
       await api.put(`/verifications/${id}/status`, { 
-        status, 
+        status: status === 'approved' ? 'approved' : 'rejected', 
         rejectionReason: status === 'rejected' ? rejectionReason : null 
       });
       setSelectedStudent(null);
@@ -35,7 +35,35 @@ export function AdminVerification() {
     }
   };
 
-  const pendingCount = verifications.filter(v => v.status === 'pending').length;
+  // Helper function to safely parse variations of status text data
+  const isPending = (status) => {
+    if (!status) return false;
+    const s = status.toLowerCase();
+    return s === 'pending' || s === 'pending review';
+  };
+
+  const isApproved = (status) => {
+    if (!status) return false;
+    return status.toLowerCase() === 'approved';
+  };
+
+  const isRejected = (status) => {
+    if (!status) return false;
+    return status.toLowerCase() === 'rejected';
+  };
+
+  // Dynamic evaluation to fix data summary card components
+  const pendingCount = verifications.filter(v => isPending(v.status)).length;
+  const approvedCount = verifications.filter(v => isApproved(v.status)).length;
+  const rejectedCount = verifications.filter(v => isRejected(v.status)).length;
+
+  // Middleware utility to inject valid base64 rendering prefixes into raw longtext payloads
+  const getDisplayImage = (base64String) => {
+    if (!base64String) return 'https://via.placeholder.com/400x250?text=ID+Document';
+    if (base64String.length < 100) return base64String; // Fallback if it's an old legacy filename string
+    if (base64String.startsWith('data:image') || base64String.startsWith('http')) return base64String;
+    return `data:image/jpeg;base64,${base64String}`;
+  };
 
   return (
     <AdminLayout>
@@ -61,9 +89,7 @@ export function AdminVerification() {
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-green-600">
-                  {verifications.filter(v => v.status === 'approved').length}
-                </p>
+                <p className="text-2xl font-bold text-green-600">{approvedCount}</p>
                 <p className="text-sm text-gray-600">Approved</p>
               </div>
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -75,9 +101,7 @@ export function AdminVerification() {
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-red-600">
-                  {verifications.filter(v => v.status === 'rejected').length}
-                </p>
+                <p className="text-2xl font-bold text-red-600">{rejectedCount}</p>
                 <p className="text-sm text-gray-600">Rejected</p>
               </div>
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
@@ -118,8 +142,8 @@ export function AdminVerification() {
                     <td className="px-6 py-4 text-gray-600 text-sm">{v.email}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        v.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        v.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        isPending(v.status) ? 'bg-yellow-100 text-yellow-700' :
+                        isApproved(v.status) ? 'bg-green-100 text-green-700' :
                         'bg-red-100 text-red-700'
                       }`}>
                         {v.status.toUpperCase()}
@@ -165,13 +189,20 @@ export function AdminVerification() {
 
                 <div>
                   <h4 className="font-bold text-gray-900 mb-3">ID Image</h4>
-                  <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-100 min-h-[200px] flex items-center justify-center">
-                     {/* In a real app, render actual image. Using placeholder for visual parity with design */}
-                    <img src={selectedStudent.idImageUrl || 'https://via.placeholder.com/400x250?text=ID+Document'} alt="ID" className="max-w-full" />
+                  <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-100 min-h-[250px] flex items-center justify-center p-2 shadow-inner">
+                    <img 
+                      src={getDisplayImage(selectedStudent.idImageUrl)} 
+                      alt="Student Identification Document" 
+                      className="max-w-full max-h-[400px] object-contain select-none rounded" 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/400x250?text=Image+Load+Failed';
+                      }}
+                    />
                   </div>
                 </div>
 
-                {selectedStudent.status === 'pending' && (
+                {isPending(selectedStudent.status) && (
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Rejection Reason (if rejecting)</label>
