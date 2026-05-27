@@ -63,6 +63,7 @@ fun AppNavigation(tokenManager: TokenManager) {
                 tokenManager = tokenManager,
                 onNavigateToNotifications = { /* Navigation handled in MainActivity */ },
                 onNavigateToChangePassword = { /* Navigation handled in MainActivity */ },
+                onNavigateToFines = { /* Navigation handled in MainActivity */ },
                 onLogout = {
                     tokenManager.clearAuthData()
                     navController.navigate(NavRoute.Login.route) {

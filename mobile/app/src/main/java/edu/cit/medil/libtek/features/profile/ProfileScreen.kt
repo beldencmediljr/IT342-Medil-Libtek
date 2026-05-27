@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,6 +48,7 @@ fun ProfileScreen(
     tokenManager: TokenManager,
     onNavigateToNotifications: () -> Unit,
     onNavigateToChangePassword: () -> Unit,
+    onNavigateToFines: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -215,6 +217,17 @@ fun ProfileScreen(
             StatBox("${profileData?.booksRead ?: 0}", "Books Read", Color(0xFF3B82F6), Modifier.weight(1f))
         }
 
+        Text("Settings", fontWeight = FontWeight.Bold, color = Color(0xFF003366), modifier = Modifier.padding(horizontal = 16.dp))
+        Card(modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))) {
+            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                SettingsClickableItem(icon = Icons.Default.Notifications, title = "Notifications", subtitle = "Manage email and push notifications", onClick = onNavigateToNotifications)
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsClickableItem(icon = Icons.Default.Lock, title = "Change Password", subtitle = "Update your account password", onClick = onNavigateToChangePassword)
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsClickableItem(icon = Icons.Default.Info, title = "My Fines", subtitle = "View and track your outstanding balance", onClick = onNavigateToFines)
+            }
+        }
+
         Text("Account Information", fontWeight = FontWeight.Bold, color = Color(0xFF003366), modifier = Modifier.padding(horizontal = 16.dp))
         Card(modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -253,15 +266,6 @@ fun ProfileScreen(
                         shape = RoundedCornerShape(8.dp)
                     ) { Text("Save Changes", color = Color.White, fontWeight = FontWeight.Bold) }
                 }
-            }
-        }
-
-        Text("Settings", fontWeight = FontWeight.Bold, color = Color(0xFF003366), modifier = Modifier.padding(horizontal = 16.dp))
-        Card(modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))) {
-            Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                SettingsClickableItem(icon = Icons.Default.Notifications, title = "Notifications", subtitle = "Manage email and push notifications", onClick = onNavigateToNotifications)
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                SettingsClickableItem(icon = Icons.Default.Lock, title = "Change Password", subtitle = "Update your account password", onClick = onNavigateToChangePassword)
             }
         }
 

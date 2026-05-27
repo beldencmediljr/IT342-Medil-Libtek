@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">LibTek</string>
     <!-- Add your Google Web Client ID from Firebase Console -->
-    <string name="default_web_client_id">YOUR_GOOGLE_WEB_CLIENT_ID_HERE</string>
+    <string name="default_web_client_id">437293832411-ep6he95625ljl2s12n277unusi10vpi8.apps.googleusercontent.com</string>
 </resources>

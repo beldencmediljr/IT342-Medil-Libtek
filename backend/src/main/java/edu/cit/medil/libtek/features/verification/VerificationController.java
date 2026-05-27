@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.cit.medil.libtek.features.user.UserRepository;
+
 @RestController
 @RequestMapping("/api/verifications")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -22,6 +24,9 @@ public class VerificationController {
 
     @Autowired
     private VerificationRepository verificationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<List<Verification>> getAllVerifications() {
@@ -52,7 +57,18 @@ public class VerificationController {
                 .orElseThrow(() -> new RuntimeException("Verification log target missing"));
         
         if (payload.containsKey("status")) {
-            verification.setStatus(payload.get("status"));
+            String status = payload.get("status");
+            verification.setStatus(status);
+            
+            // Sync user's verification state based on approval/rejection status
+            userRepository.findByEmail(verification.getEmail()).ifPresent(user -> {
+                if ("approved".equalsIgnoreCase(status)) {
+                    user.setIsVerified(true);
+                } else if ("rejected".equalsIgnoreCase(status)) {
+                    user.setIsVerified(false);
+                }
+                userRepository.save(user);
+            });
         }
         if (payload.containsKey("rejectionReason")) {
             verification.setRejectionReason(payload.get("rejectionReason"));

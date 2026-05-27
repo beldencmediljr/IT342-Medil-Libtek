@@ -127,4 +127,101 @@ public class AuthController {
 
         return ResponseEntity.status(201).body(response);
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> payload) {
+        String idToken = payload.get("idToken");
+        if (idToken == null || idToken.trim().isEmpty()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("data", null);
+            Map<String, Object> error = new HashMap<>();
+            error.put("code", "AUTH-002");
+            error.put("message", "Missing Google ID token");
+            response.put("error", error);
+            response.put("timestamp", LocalDateTime.now().toString());
+            return ResponseEntity.status(400).body(response);
+        }
+
+        try {
+            // Call Google tokeninfo endpoint to verify token
+            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            Map<String, Object> googleResponse = restTemplate.getForObject(url, Map.class);
+
+            if (googleResponse == null || googleResponse.containsKey("error_description")) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("data", null);
+                Map<String, Object> error = new HashMap<>();
+                error.put("code", "AUTH-001");
+                error.put("message", "Invalid Google ID token");
+                response.put("error", error);
+                response.put("timestamp", LocalDateTime.now().toString());
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String email = (String) googleResponse.get("email");
+            String name = (String) googleResponse.get("name");
+
+            if (email == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("data", null);
+                Map<String, Object> error = new HashMap<>();
+                error.put("code", "AUTH-001");
+                error.put("message", "Email not provided by Google");
+                response.put("error", error);
+                response.put("timestamp", LocalDateTime.now().toString());
+                return ResponseEntity.status(400).body(response);
+            }
+
+            // Find or register the user
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            User user;
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                user = new User();
+                user.setEmail(email);
+                user.setFullName(name != null ? name : email.split("@")[0]);
+                user.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString())); // set random password since it's OAuth
+                user.setRole("USER");
+                user.setIsVerified(false); // Google login does not bypass ID verification
+                userRepository.save(user);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+
+            Map<String, Object> data = new HashMap<>();
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("email", user.getEmail());
+            userData.put("full_name", user.getFullName());
+            userData.put("role", user.getRole());
+            userData.put("id_image_url", user.getIdImageUrl());
+            userData.put("is_verified", user.getIsVerified());
+
+            data.put("user", userData);
+            data.put("accessToken", user.getEmail());
+            data.put("refreshToken", user.getEmail());
+
+            response.put("data", data);
+            response.put("error", null);
+            response.put("timestamp", LocalDateTime.now().toString());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("data", null);
+            Map<String, Object> error = new HashMap<>();
+            error.put("code", "SYS-001");
+            error.put("message", "Failed to verify Google token: " + e.getMessage());
+            response.put("error", error);
+            response.put("timestamp", LocalDateTime.now().toString());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }

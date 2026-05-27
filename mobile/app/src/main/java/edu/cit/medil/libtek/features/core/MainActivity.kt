@@ -24,10 +24,11 @@ import edu.cit.medil.libtek.features.dashboard.DashboardScreen
 import edu.cit.medil.libtek.features.profile.ChangePasswordScreen
 import edu.cit.medil.libtek.features.profile.NotificationsScreen
 import edu.cit.medil.libtek.features.profile.ProfileScreen
+import edu.cit.medil.libtek.features.profile.FinesScreen
 import edu.cit.medil.libtek.features.reservation.ReservationScreen
 import edu.cit.medil.libtek.util.TokenManager
 
-enum class AppState { MAIN, NOTIFICATIONS, CHANGE_PASSWORD }
+enum class AppState { MAIN, NOTIFICATIONS, CHANGE_PASSWORD, FINES }
 
 class MainActivity : AppCompatActivity() {
 
@@ -44,11 +45,13 @@ class MainActivity : AppCompatActivity() {
             when (appState) {
                 AppState.NOTIFICATIONS -> NotificationsScreen(tokenManager, onBack = { appState = AppState.MAIN })
                 AppState.CHANGE_PASSWORD -> ChangePasswordScreen(tokenManager, onBack = { appState = AppState.MAIN })
+                AppState.FINES -> FinesScreen(tokenManager, onBack = { appState = AppState.MAIN })
                 AppState.MAIN -> {
                     MainScreen(
                         tokenManager = tokenManager,
                         onNavigateToNotifications = { appState = AppState.NOTIFICATIONS },
                         onNavigateToChangePassword = { appState = AppState.CHANGE_PASSWORD },
+                        onNavigateToFines = { appState = AppState.FINES },
                         onLogout = {
                             tokenManager.clearAuthData()
                             val intent = Intent(this, LoginActivity::class.java).apply {
@@ -69,6 +72,7 @@ fun MainScreen(
     tokenManager: TokenManager,
     onNavigateToNotifications: () -> Unit,
     onNavigateToChangePassword: () -> Unit,
+    onNavigateToFines: () -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedItem by remember { mutableIntStateOf(0) }
@@ -113,6 +117,7 @@ fun MainScreen(
                     tokenManager = tokenManager,
                     onNavigateToNotifications = onNavigateToNotifications,
                     onNavigateToChangePassword = onNavigateToChangePassword,
+                    onNavigateToFines = onNavigateToFines,
                     onLogoutClick = onLogout
                 )
             }

@@ -20,6 +20,8 @@ import edu.cit.medil.libtek.features.reservation.Reservation;
 import edu.cit.medil.libtek.features.reservation.ReservationRepository;
 import edu.cit.medil.libtek.features.verification.Verification;
 import edu.cit.medil.libtek.features.verification.VerificationRepository;
+import edu.cit.medil.libtek.features.fine.Fine;
+import edu.cit.medil.libtek.features.fine.FineRepository;
 
 @RestController
 @RequestMapping("/api/v1/user/profile")
@@ -38,6 +40,9 @@ public class UserProfileController {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    @Autowired
+    private FineRepository fineRepository;
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> getMobileProfile(Authentication authentication) {
         String email = authentication.getName();
@@ -54,7 +59,7 @@ public class UserProfileController {
             verificationStatus = "Verified";
         } else if (verificationOpt.isPresent()) {
             String vStatus = verificationOpt.get().getStatus();
-            if ("pending".equalsIgnoreCase(vStatus)) {
+            if ("pending review".equalsIgnoreCase(vStatus) || "pending".equalsIgnoreCase(vStatus)) {
                 verificationStatus = "Pending Review";
             } else if ("rejected".equalsIgnoreCase(vStatus)) {
                 verificationStatus = "Rejected";
@@ -123,5 +128,15 @@ public class UserProfileController {
 
         List<Reservation> userReservations = reservationRepository.findByStudentName(user.getFullName());
         return ResponseEntity.ok(userReservations);
+    }
+
+    @GetMapping("/fines")
+    public ResponseEntity<List<Fine>> getUserFines(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Fine> userFines = fineRepository.findByStudentName(user.getFullName());
+        return ResponseEntity.ok(userFines);
     }
 }

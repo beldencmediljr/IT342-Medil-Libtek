@@ -50,7 +50,7 @@ public class DashboardController {
 
         List<Verification> allVerifications = verificationRepository.findAll();
         List<Verification> pendingVerifications = allVerifications.stream()
-                .filter(v -> "pending".equalsIgnoreCase(v.getStatus()))
+                .filter(v -> "pending".equalsIgnoreCase(v.getStatus()) || "pending review".equalsIgnoreCase(v.getStatus()))
                 .collect(Collectors.toList());
         summary.setPendingVerificationsCount(pendingVerifications.size());
         summary.setPendingVerifications(pendingVerifications.stream().limit(3).collect(Collectors.toList()));

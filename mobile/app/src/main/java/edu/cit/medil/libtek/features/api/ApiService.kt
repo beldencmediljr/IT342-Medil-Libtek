@@ -32,6 +32,18 @@ data class ProfileData(
 data class ResourceDto(val id: Long, val type: String?, val name: String?, val author: String?, val isbn: String?, val category: String?, val capacity: String?, val location: String?, val available: Boolean)
 data class ReservationDto(val id: Long, val studentName: String?, val resourceType: String?, val resourceName: String?, val reservationDate: String?, val status: String?)
 
+data class FineDto(
+    val id: Long,
+    val studentName: String?,
+    val studentId: String?,
+    val resourceName: String?,
+    val daysOverdue: Int,
+    val amount: Double,
+    val status: String?,
+    val receiptNumber: String?,
+    val notes: String?
+)
+
 interface ApiService {
     @POST("/api/v1/auth/login")
     fun login(@Body credentials: Map<String, String>): Call<AuthResponse>
@@ -68,4 +80,7 @@ interface ApiService {
 
     @POST("/api/verifications")
     fun uploadIdVerification(@Header("Authorization") token: String, @Body payload: Map<String, String>): Call<Map<String, Any>>
+
+    @GET("/api/v1/user/profile/fines")
+    fun getUserFines(@Header("Authorization") token: String): Call<List<FineDto>>
 }
