@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useToast } from '../../context/ToastContext';
 
 const Login = () => {
+    const { showToast } = useToast();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
@@ -12,9 +14,9 @@ const Login = () => {
                 email,
                 password
             });
-            alert("Login Successful! Token: " + response.data.accessToken);
+            showToast("Login Successful!", "success");
         } catch (error) {
-            alert("Invalid Credentials");
+            showToast("Invalid Credentials", "error");
         }
     };
 

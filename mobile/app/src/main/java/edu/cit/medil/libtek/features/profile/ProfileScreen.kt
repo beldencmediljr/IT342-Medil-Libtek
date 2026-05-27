@@ -193,6 +193,14 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Verification Status: $status", fontWeight = FontWeight.Bold, color = verificationColor)
+                    if (status.equals("Rejected", ignoreCase = true) && !profileData?.rejectionReason.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Reason: ${profileData?.rejectionReason}",
+                            fontSize = 11.sp,
+                            color = Color(0xFF991B1B)
+                        )
+                    }
                 }
                 if (!isVerified && !isPendingReview) {
                     if (isUploading) {

@@ -26,7 +26,8 @@ data class ProfileData(
     val studyTimeHours: Int,
     val booksRead: Int,
     val phone: String?,
-    val verificationStatus: String
+    val verificationStatus: String,
+    val rejectionReason: String? = null
 )
 
 data class ResourceDto(val id: Long, val type: String?, val name: String?, val author: String?, val isbn: String?, val category: String?, val capacity: String?, val location: String?, val available: Boolean)

@@ -3,9 +3,11 @@ import { Users, BookOpen, Calendar, TrendingUp, AlertTriangle, CheckCircle, MapP
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { useToast } from '../../context/ToastContext';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [scanStudentId, setScanStudentId] = useState(''); 
   const [isScanning, setIsScanning] = useState(false);    
@@ -48,7 +50,7 @@ export function AdminDashboard() {
       fetchDashboardData(); 
     } catch (error) {
       console.error('Scan failed:', error);
-      alert('Failed to process scan. Check backend connection.');
+      showToast('Failed to process scan. Check backend connection.', 'error');
     } finally {
       setIsScanning(false);
     }

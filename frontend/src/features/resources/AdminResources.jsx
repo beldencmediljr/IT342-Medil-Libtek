@@ -2,8 +2,10 @@ import { AdminLayout } from '../admin/AdminLayout';
 import { Plus, Search, Trash2, BookOpen, MapPin } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
+import { useToast } from '../../context/ToastContext';
 
 export function AdminResources() {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('books');
   const [showAddModal, setShowAddModal] = useState(false);
   const [resources, setResources] = useState([]);
@@ -37,19 +39,19 @@ export function AdminResources() {
     e.preventDefault(); 
 
     if (!formData.name.trim()) {
-      alert("Please enter a name or title for the resource.");
+      showToast("Please enter a name or title for the resource.", "warning");
       return;
     }
 
     try {
       await api.post('/resources', formData);
-      alert("Resource successfully added!");
+      showToast("Resource successfully added!", "success");
       setShowAddModal(false);
       setFormData(initialFormState); 
       fetchResources();
     } catch (error) {
       console.error("Failed to add resource:", error);
-      alert("Failed to save resource to the database. Please check connection.");
+      showToast("Failed to save resource to the database. Please check connection.", "error");
     }
   };
 
@@ -58,10 +60,11 @@ export function AdminResources() {
     
     try {
       await api.delete(`/resources/${id}`);
+      showToast("Resource successfully deleted!", "success");
       fetchResources();
     } catch (error) {
       console.error(error);
-      alert("Failed to delete resource.");
+      showToast("Failed to delete resource.", "error");
     }
   };
 

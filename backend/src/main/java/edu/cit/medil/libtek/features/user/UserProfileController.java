@@ -74,6 +74,7 @@ public class UserProfileController {
         data.put("booksRead", Math.max(0, allUserReservations.size() - activeReservations.size())); 
         data.put("phone", user.getPhoneNumber() != null ? user.getPhoneNumber() : "+63"); 
         data.put("verificationStatus", verificationStatus);
+        data.put("rejectionReason", (verificationOpt.isPresent() && "rejected".equalsIgnoreCase(verificationOpt.get().getStatus())) ? verificationOpt.get().getRejectionReason() : null);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);

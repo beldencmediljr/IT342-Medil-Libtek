@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Shield } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 export function AdminLogin() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -13,7 +15,7 @@ export function AdminLogin() {
       localStorage.setItem('token', 'dummy-admin-token');
       navigate('/admin/dashboard');
     } else {
-      alert('Invalid credentials');
+      showToast('Invalid credentials', 'error');
     }
   };
 
